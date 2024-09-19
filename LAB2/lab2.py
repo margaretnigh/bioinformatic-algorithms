@@ -9,6 +9,7 @@ with open(filename, "r") as file:
 
 lines = file_contents.split("\n")
 genome = lines[0]
+genome = genome.replace("$","")
 k = int(lines[1])
 
 # A DNA string s (of length at most 20 kbp) with: 
@@ -37,19 +38,34 @@ def PrepareTree(suffix_tree):
         tree[parent].append([child, location, length])
     return tree
 
-def FindLongestRepeat(tree, k, genome):
-    suffix_tree = PrepareTree(tree)
-    for children in suffix_tree:
-        # for each internal node count the number of leaf nodes in its subtree
-        for node in suffix_tree[children]:
-            child, location, length = node
-    # this count tells you how many times the substring corresponding to that internal node appears in the string
-    # if # of leaf nodes is at least k, substring is valid candidate for the longest multiple repeat
-        # while traversing, keep track of the longest substring that has at least k occurances to find the answer
-def CountLeafNodes(node):
-    if node not in suffix_tree:
-        return 1  # it is a leaf node
-    return sum(count_leaf_nodes(child) for child in suffix_tree[node])
+def CountLeafNodes(node, tree):
+    if node not in tree:
+        return 1  # It is a leaf
+    count = 0
+    for child in tree[node]:
+        child_node = child[0]
+        count += CountLeafNodes(child_node, tree)
+    return count
 
-FindLongestRepeat(suffix_tree, k, genome) 
+def FindLongestRepeat(suffix_tree, k):
+    tree = PrepareTree(suffix_tree)
+    max_length = 0
+    longest_substring = ""
+
+    for node in tree:
+        if node > 1:  # Avoid the root or irrelevant nodes
+            leaf_node_count = CountLeafNodes(node, tree)
+            
+            for child in tree[node]:
+                child_node, location, length = child
+                if leaf_node_count >= k:
+                    substring = genome[location-length-1:location-1]
+                    if length > max_length:
+                        max_length = length
+                        longest_substring = substring
+
+    print("Longest substring that occurs at least", k, "times:", longest_substring)
+
+
+FindLongestRepeat(suffix_tree, k)
     
